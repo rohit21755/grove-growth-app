@@ -1,11 +1,11 @@
 import { API_BASE_URL, API_DEFAULT_HEADERS } from "@/constants/api";
 import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-  type ReactNode,
+    createContext,
+    useCallback,
+    useContext,
+    useMemo,
+    useState,
+    type ReactNode,
 } from "react";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
@@ -16,7 +16,16 @@ type RequestConfig = {
   body?: unknown;
   /** Override base URL for this request */
   baseUrl?: string;
+  /** Override token for this request (e.g. after refresh retry) */
+  tokenOverride?: string;
+  /** Internal: skip refresh retry to avoid loop */
+  _skipRefreshRetry?: boolean;
 };
+
+/** Called on 401 to get a new token; returns new token or null. */
+export type RefreshTokenHandler = (
+  oldToken: string | null,
+) => Promise<string | null>;
 
 export type ApiError = {
   message: string;
@@ -28,6 +37,8 @@ type ApiContextValue = {
   /** Auth token; when set, sent as Bearer in Authorization header */
   authToken: string | null;
   setAuthToken: (token: string | null) => void;
+  /** Set handler for 401: exchange old token for new one; used for refresh token flow */
+  setRefreshTokenHandler: (handler: RefreshTokenHandler | null) => void;
   /** Base URL for all requests */
   baseUrl: string;
   setBaseUrl: (url: string) => void;
@@ -72,6 +83,8 @@ function buildUrl(base: string, path: string): string {
 export function ApiProvider({ children }: { children: ReactNode }) {
   const [authToken, setAuthTokenState] = useState<string | null>(null);
   const [baseUrl, setBaseUrlState] = useState(API_BASE_URL);
+  const [refreshTokenHandler, setRefreshTokenHandler] =
+    useState<RefreshTokenHandler | null>(null);
 
   const setAuthToken = useCallback((token: string | null) => {
     setAuthTokenState(token);
@@ -91,8 +104,11 @@ export function ApiProvider({ children }: { children: ReactNode }) {
         headers: customHeaders = {},
         body,
         baseUrl: overrideBase,
+        tokenOverride,
+        _skipRefreshRetry,
       } = config;
 
+      const token = tokenOverride ?? authToken;
       const url = buildUrl(overrideBase ?? baseUrl, path);
       const isFormData = body instanceof FormData;
       const headers: Record<string, string> = {
@@ -100,8 +116,8 @@ export function ApiProvider({ children }: { children: ReactNode }) {
         ...customHeaders,
       };
 
-      if (authToken) {
-        headers.Authorization = `Bearer ${authToken}`;
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
       }
 
       const init: RequestInit = {
@@ -129,6 +145,27 @@ export function ApiProvider({ children }: { children: ReactNode }) {
       }
 
       if (!res.ok) {
+        if (
+          res.status === 401 &&
+          path !== "/auth/refresh" &&
+          refreshTokenHandler &&
+          !_skipRefreshRetry
+        ) {
+          try {
+            const newToken = await refreshTokenHandler(authToken);
+            if (newToken) {
+              setAuthTokenState(newToken);
+              return request<T>(path, {
+                ...config,
+                tokenOverride: newToken,
+                _skipRefreshRetry: true,
+              });
+            }
+          } catch {
+            // Refresh failed; fall through and throw original 401
+          }
+        }
+
         const error: ApiError = {
           message: res.statusText || "Request failed",
           status: res.status,
@@ -139,7 +176,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
 
       return data;
     },
-    [baseUrl, authToken],
+    [baseUrl, authToken, refreshTokenHandler],
   );
 
   const get = useCallback(
@@ -204,6 +241,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
     () => ({
       authToken,
       setAuthToken,
+      setRefreshTokenHandler,
       baseUrl,
       setBaseUrl,
       request,

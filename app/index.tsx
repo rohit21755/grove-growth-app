@@ -1,12 +1,26 @@
 import { GlobalStyle } from "@/assets/styles/GlobalStyle";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { Colors } from "@/constants/theme";
+import { useAuthStore } from "@/store/auth-store";
 import { type Href, router } from "expo-router";
+import { useEffect } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
 export default function Landing() {
+  const { isAuthenticated, initialized } = useAuthStore();
+
+  useEffect(() => {
+    if (initialized && isAuthenticated) {
+      router.replace("/(tabs)");
+    }
+  }, [initialized, isAuthenticated]);
+
   function handleClick() {
     router.push("/login");
+  }
+
+  if (!initialized || isAuthenticated) {
+    return null;
   }
 
   return (

@@ -41,7 +41,7 @@ export default function LoginScreen() {
       await setAuth(response.token, response.user);
       api.setAuthToken(response.token);
 
-      router.replace("/");
+      router.replace("/(tabs)");
     } catch (err) {
       const apiError = err as ApiError;
       const errorMessage =

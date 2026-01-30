@@ -32,12 +32,37 @@ export type LoginResponse = {
   user: User;
 };
 
+/** Request body for POST /auth/refresh (optional if token sent in Authorization header) */
+export type RefreshTokenRequest = {
+  token?: string;
+};
+
 /**
  * Hook for authentication API calls.
  * Uses zustand (auth store) + expo-secure-store for token persistence.
  */
 export function useAuthApi() {
   const api = useApi();
+
+  /**
+   * Exchange old JWT (valid or expired) for a new one.
+   * POST /auth/refresh – token in body or Authorization header.
+   * Returns new token and user; throws on 400/401/500.
+   */
+  const refreshToken = useCallback(
+    async (oldToken: string | null): Promise<LoginResponse> => {
+      const response = await api.post<LoginResponse>("/auth/refresh", {
+        token: oldToken ?? undefined,
+      });
+
+      if (!response) {
+        throw new Error("Refresh failed: No response from server");
+      }
+
+      return response;
+    },
+    [api],
+  );
 
   const login = useCallback(
     async (data: LoginRequest): Promise<LoginResponse> => {
@@ -96,5 +121,5 @@ export function useAuthApi() {
     [api],
   );
 
-  return { login, register };
+  return { login, register, refreshToken };
 }

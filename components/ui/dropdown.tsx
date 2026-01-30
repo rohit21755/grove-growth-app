@@ -1,228 +1,161 @@
 import { FontFamily } from "@/constants/theme";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useMemo, useState } from "react";
+import { useState } from "react";
 import {
-    Modal,
+    LayoutAnimation,
     Pressable,
-    ScrollView,
     StyleSheet,
     Text,
-    TextInput,
     View,
 } from "react-native";
 
 export type DropdownOption = { label: string; value: string };
 
-type DropdownProps = {
+type DropdownPropsBase = {
   label?: string;
   placeholder?: string;
+};
+
+type DropdownPropsSimple = DropdownPropsBase & {
+  list: string[];
+  selected: string;
+  setSelected: (value: string) => void;
+  options?: never;
+  value?: never;
+  onSelect?: never;
+};
+
+type DropdownPropsOptions = DropdownPropsBase & {
+  list?: never;
+  selected?: never;
+  setSelected?: never;
   options: DropdownOption[];
   value: string | null;
   onSelect: (value: string) => void;
 };
 
-export function Dropdown({
-  label,
-  placeholder = "Select...",
-  options,
-  value,
-  onSelect,
-}: DropdownProps) {
+export type DropdownProps = DropdownPropsSimple | DropdownPropsOptions;
+
+function isOptionsProps(props: DropdownProps): props is DropdownPropsOptions {
+  return props.options != null;
+}
+
+export default function Dropdown(props: DropdownProps) {
   const [open, setOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
 
-  const selectedLabel =
-    options.find((o) => o.value === value)?.label ?? placeholder;
+  const options: DropdownOption[] = isOptionsProps(props)
+    ? props.options
+    : props.list.map((s) => ({ label: s, value: s }));
 
-  const filteredOptions = useMemo(() => {
-    if (!searchQuery.trim()) return options;
-    const query = searchQuery.toLowerCase();
-    return options.filter((opt) => opt.label.toLowerCase().includes(query));
-  }, [options, searchQuery]);
+  const selectedValue = isOptionsProps(props) ? props.value : props.selected;
+  const displayText =
+    options.find((o) => o.value === selectedValue)?.label ??
+    (isOptionsProps(props) ? (props.placeholder ?? "Select...") : "");
 
-  const handleClose = () => {
+  const toggleDropdown = () => {
+    LayoutAnimation.easeInEaseOut();
+    setOpen((prev) => !prev);
+  };
+
+  const onSelect = (item: DropdownOption) => {
+    LayoutAnimation.easeInEaseOut();
+    if (isOptionsProps(props)) {
+      props.onSelect(item.value);
+    } else {
+      props.setSelected(item.value);
+    }
     setOpen(false);
-    setSearchQuery("");
   };
 
   return (
-    <View style={styles.container}>
-      {label && <Text style={styles.label}>{label}</Text>}
-      <Pressable style={styles.trigger} onPress={() => setOpen(true)}>
-        <Text
-          style={[styles.triggerText, !value && styles.placeholder]}
-          numberOfLines={1}
-        >
-          {selectedLabel}
+    <View style={styles.wrapper}>
+      {props.label != null && (
+        <Text style={styles.labelText}>{props.label}</Text>
+      )}
+      {/* Trigger */}
+      <Pressable style={styles.container} onPress={toggleDropdown}>
+        <Text style={styles.text} numberOfLines={1}>
+          {displayText}
         </Text>
-        <Text style={styles.chevron}>▼</Text>
+        <Ionicons
+          name="chevron-down"
+          size={18}
+          color="#fff"
+          style={{ transform: [{ rotate: open ? "180deg" : "0deg" }] }}
+        />
       </Pressable>
 
-      <Modal
-        visible={open}
-        transparent
-        animationType="fade"
-        onRequestClose={handleClose}
-      >
-        <Pressable style={styles.modalOverlay} onPress={handleClose}>
-          <View style={styles.modalContent}>
-            <Pressable onPress={(e) => e.stopPropagation()}>
-              <View style={styles.searchContainer}>
-                <Ionicons
-                  name="search"
-                  size={20}
-                  color="#9BA1A6"
-                  style={styles.searchIcon}
-                />
-                <TextInput
-                  style={styles.searchInput}
-                  placeholder="Search..."
-                  placeholderTextColor="#666"
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  autoFocus
-                />
-                {searchQuery.length > 0 && (
-                  <Pressable
-                    onPress={() => setSearchQuery("")}
-                    style={styles.clearButton}
-                  >
-                    <Ionicons name="close-circle" size={20} color="#9BA1A6" />
-                  </Pressable>
-                )}
-              </View>
-              <ScrollView
-                style={styles.optionsList}
-                keyboardShouldPersistTaps="handled"
-              >
-                {filteredOptions.length === 0 ? (
-                  <View style={styles.emptyContainer}>
-                    <Text style={styles.emptyText}>No results found</Text>
-                  </View>
-                ) : (
-                  filteredOptions.map((opt) => (
-                    <Pressable
-                      key={opt.value}
-                      style={({ pressed }) => [
-                        styles.option,
-                        pressed && styles.optionPressed,
-                        value === opt.value && styles.optionSelected,
-                      ]}
-                      onPress={() => {
-                        onSelect(opt.value);
-                        handleClose();
-                      }}
-                    >
-                      <Text style={styles.optionText}>{opt.label}</Text>
-                    </Pressable>
-                  ))
-                )}
-              </ScrollView>
+      {/* Menu */}
+      {open && (
+        <View style={styles.menu}>
+          {options.map((item) => (
+            <Pressable
+              key={item.value}
+              style={styles.menuItem}
+              onPress={() => onSelect(item)}
+            >
+              <Text style={styles.menuText}>{item.label}</Text>
             </Pressable>
-          </View>
-        </Pressable>
-      </Modal>
+          ))}
+        </View>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    marginBottom: 24,
+  wrapper: {
+    position: "relative",
+    zIndex: 1000,
   },
-  label: {
-    color: "rgba(191, 191, 191, 1)",
+
+  labelText: {
+    color: "#FFFFFF",
     fontSize: 14,
-    fontWeight: "500",
-    marginBottom: 8,
-    fontFamily: FontFamily.semiBold,
+    fontFamily: FontFamily.regular,
+    marginBottom: 4,
   },
-  trigger: {
+
+  container: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    width: "100%",
-    minHeight: 32,
-    borderRadius: 5,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 999,
     borderWidth: 1,
-    borderColor: "#3a3a3a",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: "#2a2a2a",
+    width: "100%",
+    minWidth: 150,
+    backgroundColor: "#1D1D1D",
   },
-  triggerText: {
+
+  text: {
     color: "#FFFFFF",
     fontSize: 14,
-    flex: 1,
     fontFamily: FontFamily.regular,
-  },
-  placeholder: {
-    color: "#666",
-  },
-  chevron: {
-    color: "#9BA1A6",
-    fontSize: 10,
-    marginLeft: 8,
-  },
-  modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    padding: 24,
   },
-  modalContent: {
-    backgroundColor: "#2a2a2a",
-    borderRadius: 8,
-    maxHeight: 400,
+
+  menu: {
+    position: "absolute",
+    top: "100%",
+    left: 0,
+    right: 0,
+    marginTop: 4,
+    borderRadius: 14,
+    backgroundColor: "#1D1D1D",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.15)",
     overflow: "hidden",
+    zIndex: 1001,
   },
-  searchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderBottomWidth: 1,
-    borderBottomColor: "#3a3a3a",
-    paddingHorizontal: 12,
+
+  menuItem: {
     paddingVertical: 8,
-  },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontFamily: FontFamily.regular,
-    paddingVertical: 4,
-  },
-  clearButton: {
-    marginLeft: 8,
-    padding: 4,
-  },
-  optionsList: {
-    padding: 8,
-    maxHeight: 320,
-  },
-  emptyContainer: {
-    paddingVertical: 24,
-    alignItems: "center",
-  },
-  emptyText: {
-    color: "#9BA1A6",
-    fontSize: 14,
-    fontFamily: FontFamily.regular,
-  },
-  option: {
-    paddingVertical: 12,
     paddingHorizontal: 12,
-    borderRadius: 5,
   },
-  optionPressed: {
-    backgroundColor: "#3a3a3a",
-  },
-  optionSelected: {
-    backgroundColor: "#33167F",
-  },
-  optionText: {
+
+  menuText: {
     color: "#FFFFFF",
     fontSize: 14,
     fontFamily: FontFamily.regular,

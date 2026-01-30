@@ -1,4 +1,4 @@
-import { Dropdown, type DropdownOption } from "@/components/ui/dropdown";
+import Dropdown from "@/components/ui/dropdown";
 import { FileUpload } from "@/components/ui/file-upload";
 import { GenericInput } from "@/components/ui/generic-input";
 import { GradientButton } from "@/components/ui/gradient-button";
@@ -6,10 +6,11 @@ import { InputPlaceholder } from "@/components/ui/input-placeholder";
 import { Colors, FontFamily } from "@/constants/theme";
 import { ApiError, useApi } from "@/contexts/api-context";
 import { useAuthApi } from "@/hooks/use-auth-api";
-import { useStatesApi } from "@/hooks/use-states-api";
+import { useCollegesQuery, useStatesQuery } from "@/hooks/use-states-api";
 import { useAuthStore } from "@/store/auth-store";
+import type { College, State } from "@/types/states";
 import { router } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -21,7 +22,6 @@ import {
 } from "react-native";
 
 export default function RegisterScreen() {
-  const { getStates, getCollegesByState } = useStatesApi();
   const { register } = useAuthApi();
   const { setAuth } = useAuthStore();
   const api = useApi();
@@ -38,10 +38,28 @@ export default function RegisterScreen() {
   // Step 2: state (first dropdown) and college (second dropdown)
   const [stateId, setStateId] = useState<string | null>(null);
   const [collegeId, setCollegeId] = useState<string | null>(null);
-  const [stateOptions, setStateOptions] = useState<DropdownOption[]>([]);
-  const [collegeOptions, setCollegeOptions] = useState<DropdownOption[]>([]);
-  const [statesLoading, setStatesLoading] = useState(false);
-  const [collegesLoading, setCollegesLoading] = useState(false);
+
+  const { data: states = [], isLoading: statesLoading } = useStatesQuery({
+    enabled: step === 2,
+  });
+  const stateOptions = useMemo(
+    () => states.map((s: State) => ({ label: s.name, value: s.id })),
+    [states],
+  );
+
+  const { data: colleges = [], isLoading: collegesLoading } = useCollegesQuery(
+    stateId,
+    { enabled: !!stateId?.trim() },
+  );
+  const collegeOptions = useMemo(
+    () => colleges.map((c: College) => ({ label: c.name, value: c.id })),
+    [colleges],
+  );
+
+  // Clear college when state changes
+  useEffect(() => {
+    setCollegeId(null);
+  }, [stateId]);
 
   // Step 3 (optional)
   const [referralCode, setReferralCode] = useState("");
@@ -55,50 +73,6 @@ export default function RegisterScreen() {
     name: string;
     type: string;
   } | null>(null);
-
-  // Load states when step 2 is shown
-  useEffect(() => {
-    if (step !== 2) return;
-    let cancelled = false;
-    setStatesLoading(true);
-    getStates()
-      .then((states) => {
-        if (!cancelled)
-          setStateOptions(states.map((s) => ({ label: s.name, value: s.id })));
-      })
-      .finally(() => {
-        if (!cancelled) setStatesLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [step, getStates]);
-
-  // Load colleges when state is selected; clear college selection when state changes
-  useEffect(() => {
-    if (!stateId?.trim()) {
-      setCollegeOptions([]);
-      setCollegeId(null);
-      return;
-    }
-    let cancelled = false;
-    setCollegeId(null);
-    setCollegeOptions([]);
-    setCollegesLoading(true);
-    getCollegesByState(stateId)
-      .then((colleges) => {
-        if (!cancelled)
-          setCollegeOptions(
-            colleges.map((c) => ({ label: c.name, value: c.id })),
-          );
-      })
-      .finally(() => {
-        if (!cancelled) setCollegesLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [stateId, getCollegesByState]);
 
   const goNext = useCallback(() => {
     if (step < 3) setStep(step + 1);
@@ -159,7 +133,7 @@ export default function RegisterScreen() {
       api.setAuthToken(response.token);
 
       // Navigate to home/dashboard
-      router.replace("/");
+      router.replace("/(tabs)");
     } catch (err) {
       const apiError = err as ApiError;
       const errorMessage =

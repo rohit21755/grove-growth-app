@@ -13,6 +13,7 @@ export type User = {
   role: string;
   xp: number;
   level: number;
+  avatar_url?: string;
   [key: string]: unknown;
 };
 
@@ -22,6 +23,7 @@ type AuthState = {
   isAuthenticated: boolean;
   initialized: boolean;
   setAuth: (token: string, user: User) => Promise<void>;
+  updateUser: (user: User) => Promise<void>;
   clearAuth: () => Promise<void>;
   initialize: () => Promise<void>;
 };
@@ -43,6 +45,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       console.error("Failed to save auth data:", error);
       // Still update state even if storage fails
       set({ token, user, isAuthenticated: true });
+    }
+  },
+  updateUser: async (user) => {
+    try {
+      await SecureStore.setItemAsync(USER_KEY, JSON.stringify(user));
+      set({ user });
+    } catch (error) {
+      console.error("Failed to update user in store:", error);
+      set({ user });
     }
   },
   clearAuth: async () => {
