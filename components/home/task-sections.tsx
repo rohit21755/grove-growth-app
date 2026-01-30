@@ -5,11 +5,11 @@ import type { Task, UserTaskStatus } from "@/types/tasks";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import {
-  ActivityIndicator,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    Pressable,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 import TaskCard from "../task-card";
 import Dropdown from "../ui/dropdown";
@@ -49,7 +49,7 @@ export default function TaskSections() {
           selected={filter}
           setSelected={(value) => setFilter(value as "Completed" | "Ongoing")}
         />
-        <Pressable onPress={() => refetch()}>
+        <Pressable onPress={() => router.push("/all-tasks")}>
           <Text style={styles.viewAllText}>View All</Text>
         </Pressable>
       </View>

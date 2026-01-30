@@ -12,13 +12,13 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
-  Image,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    Image,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 
 const SEGMENT_OPTIONS = ["Ongoing", "Completed"] as const;
@@ -130,12 +130,7 @@ export default function TaskScreen() {
 
       <View style={styles.sectionHeader}>
         <View style={styles.sectionHeaderSpacer} />
-        <Pressable
-          onPress={() => {
-            refetch();
-            if (selected === "Completed") refetchHistory();
-          }}
-        >
+        <Pressable onPress={() => router.push("/all-tasks")}>
           <Text style={styles.viewAllText}>View all</Text>
         </Pressable>
       </View>

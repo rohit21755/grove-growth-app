@@ -17,6 +17,9 @@ export type AppHeaderProps = {
   monthText?: string;
   onMonthPress?: () => void;
   onBackPress?: () => void;
+  /** When both provided, show settings + three-dots instead of avatar (e.g. on profile) */
+  onSettings?: () => void;
+  onMore?: () => void;
 };
 
 export default function AppHeader({
@@ -28,9 +31,12 @@ export default function AppHeader({
   monthText,
   onMonthPress,
   onBackPress,
+  onSettings,
+  onMore,
 }: AppHeaderProps) {
   const user = useAuthStore((s) => s.user);
   const initial = user?.name?.charAt(0)?.toUpperCase() ?? "?";
+  const showSettingsAndMore = onSettings != null && onMore != null;
 
   const handleBack = onBackPress ?? (() => router.back());
 
@@ -62,16 +68,27 @@ export default function AppHeader({
         </Pressable>
       )}
 
-      <Pressable onPress={() => router.push("/profile" as const)}>
-        <LinearGradient
-          colors={["#3958A1", "#47368F"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.avatar}
-        >
-          <Text style={styles.avatarText}>{initial}</Text>
-        </LinearGradient>
-      </Pressable>
+      {showSettingsAndMore ? (
+        <View style={styles.rightIcons}>
+          <Pressable style={styles.iconButton} onPress={onSettings}>
+            <Ionicons name="settings-outline" size={18} color="#fff" />
+          </Pressable>
+          <Pressable style={styles.iconButton} onPress={onMore}>
+            <Ionicons name="ellipsis-vertical" size={18} color="#fff" />
+          </Pressable>
+        </View>
+      ) : (
+        <Pressable onPress={() => router.push("/profile" as const)}>
+          <LinearGradient
+            colors={["#3958A1", "#47368F"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.avatar}
+          >
+            <Text style={styles.avatarText}>{initial}</Text>
+          </LinearGradient>
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -112,6 +129,11 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 16,
     fontFamily: FontFamily.bold,
+  },
+  rightIcons: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   avatar: {
     width: 32,

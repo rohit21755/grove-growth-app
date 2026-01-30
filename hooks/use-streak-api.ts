@@ -8,6 +8,26 @@ export type StreakCheckInResponse = {
   [key: string]: unknown;
 };
 
+/** Build list of YYYY-MM-DD dates for the current streak (for calendar marking) */
+export function getStreakDateStrings(
+  streakStartedAt: string,
+  streakDays: number,
+): string[] {
+  if (!streakStartedAt || streakDays < 1) return [];
+  const start = new Date(streakStartedAt);
+  start.setHours(0, 0, 0, 0);
+  const out: string[] = [];
+  for (let i = 0; i < streakDays; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    out.push(`${y}-${m}-${day}`);
+  }
+  return out;
+}
+
 /** POST /user/streak/redeem response */
 export type RedeemStreakResponse = {
   streak_days: number;
