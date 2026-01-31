@@ -1,5 +1,6 @@
 import { BellIcon, RewardsTabIcon } from "@/components/icons/tab-icons";
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { StyleSheet, Text, View } from "react-native";
 
@@ -19,6 +20,9 @@ export default function ProfileCard({
   profilePicture,
 }: ProfileCardProps) {
   const initial = name?.charAt(0)?.toUpperCase() ?? "?";
+  const hasProfilePic = Boolean(
+    typeof profilePicture === "string" && profilePicture.trim(),
+  );
   return (
     <LinearGradient
       colors={["#1C519D", "#33167F", "#1D1D1D"]}
@@ -30,9 +34,13 @@ export default function ProfileCard({
       {/* Top Row */}
       <View style={styles.topRow}>
         <View style={styles.profileRow}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initial}</Text>
-          </View>
+          {hasProfilePic ? (
+            <Image source={{ uri: profilePicture }} style={styles.avatar} />
+          ) : (
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{initial}</Text>
+            </View>
+          )}
           <Text style={styles.helloText}>Hello, {name ?? "User"}</Text>
         </View>
 
@@ -88,6 +96,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#3B5BDB",
     justifyContent: "center",
     alignItems: "center",
+    overflow: "hidden",
   },
 
   avatarText: {

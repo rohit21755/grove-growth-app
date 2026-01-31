@@ -1,6 +1,7 @@
 import { FontFamily } from "@/constants/theme";
 import { useAuthStore } from "@/store/auth-store";
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -36,6 +37,10 @@ export default function AppHeader({
 }: AppHeaderProps) {
   const user = useAuthStore((s) => s.user);
   const initial = user?.name?.charAt(0)?.toUpperCase() ?? "?";
+  const avatarUrl =
+    typeof user?.avatar_url === "string" && user.avatar_url.trim()
+      ? user.avatar_url
+      : null;
   const showSettingsAndMore = onSettings != null && onMore != null;
 
   const handleBack = onBackPress ?? (() => router.back());
@@ -77,6 +82,10 @@ export default function AppHeader({
             <Ionicons name="ellipsis-vertical" size={18} color="#fff" />
           </Pressable>
         </View>
+      ) : avatarUrl ? (
+        <Pressable onPress={() => router.push("/profile" as const)}>
+          <Image source={{ uri: avatarUrl }} style={styles.avatar} />
+        </Pressable>
       ) : (
         <Pressable onPress={() => router.push("/profile" as const)}>
           <LinearGradient

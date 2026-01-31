@@ -4,20 +4,20 @@ import RankItem from "@/components/rank-item";
 import Dropdown from "@/components/ui/dropdown";
 import { Colors, FontFamily } from "@/constants/theme";
 import {
-  useLeaderboardQuery,
-  type LeaderboardFilter,
-  type LeaderboardPeriod,
+    useLeaderboardQuery,
+    type LeaderboardFilter,
+    type LeaderboardPeriod,
 } from "@/hooks/use-leaderboard-api";
 import { useAuthStore } from "@/store/auth-store";
 import type { LeaderboardEntry } from "@/types/leaderboard";
 import { useFocusEffect } from "@react-navigation/native";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 
 const DEFAULT_AVATAR = "https://api.dicebear.com/7.x/avataaars/svg?seed=user";
@@ -71,32 +71,6 @@ export default function LeaderboardScreen() {
     [entries, user?.id],
   );
   const rankDisplay = myEntry ? String(myEntry.rank) : "—";
-
-  useEffect(() => {
-    console.log("Leaderboard entire", {
-      filter,
-      period,
-      userStateId: user?.state_id,
-      userCollegeId: user?.college_id,
-      isLoading,
-      isError,
-      leaderboardData,
-      entries,
-      myEntry,
-      rankDisplay,
-    });
-  }, [
-    filter,
-    period,
-    user?.state_id,
-    user?.college_id,
-    isLoading,
-    isError,
-    leaderboardData,
-    entries,
-    myEntry,
-    rankDisplay,
-  ]);
 
   const onFilterSelect = (value: string) => {
     setFilter(value as LeaderboardFilter);
@@ -169,6 +143,7 @@ export default function LeaderboardScreen() {
               points={entry.xp}
               level={entry.level ?? 1}
               rank={entry.rank}
+              userId={entry.id}
             />
           ))
         )}

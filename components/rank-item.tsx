@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { Image, StyleSheet, Text, View } from "react-native";
+import { useRouter } from "expo-router";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
 interface RankItemProps {
   avatar: string;
@@ -8,6 +9,9 @@ interface RankItemProps {
   points: number;
   level: number;
   rank: number;
+  /** User ID for navigation to profile */
+  userId?: string;
+  onPress?: () => void;
 }
 
 const DEFAULT_AVATAR = "https://api.dicebear.com/7.x/avataaars/svg?seed=user";
@@ -23,11 +27,25 @@ export default function RankItem({
   points,
   level,
   rank,
+  userId,
+  onPress,
 }: RankItemProps) {
+  const router = useRouter();
   const avatarUri = getAvatarUri(avatar);
 
-  return (
-    <View style={styles.container}>
+  const handlePress = () => {
+    if (onPress) {
+      onPress();
+    } else if (userId) {
+      router.push({
+        pathname: "/user-profile/[id]",
+        params: { id: userId },
+      });
+    }
+  };
+
+  const content = (
+    <>
       <View style={styles.left}>
         <View>
           <Image source={{ uri: avatarUri }} style={styles.avatar} />
@@ -35,7 +53,6 @@ export default function RankItem({
             <Text style={styles.rankText}>{rank}</Text>
           </View>
         </View>
-
         <View>
           <Text style={styles.name}>{name}</Text>
           <Text style={styles.meta}>
@@ -43,15 +60,27 @@ export default function RankItem({
           </Text>
         </View>
       </View>
-
       <LinearGradient
         colors={["#2E2E2E", "#1C1C1C"]}
         style={styles.iconWrapper}
       >
         <Ionicons name="sparkles-outline" size={22} color="#9FC4FF" />
       </LinearGradient>
-    </View>
+    </>
   );
+
+  if (userId || onPress) {
+    return (
+      <Pressable
+        onPress={handlePress}
+        style={({ pressed }) => [styles.container, pressed && { opacity: 0.8 }]}
+      >
+        {content}
+      </Pressable>
+    );
+  }
+
+  return <View style={styles.container}>{content}</View>;
 }
 
 const styles = StyleSheet.create({

@@ -7,8 +7,14 @@ export interface ProfileActionSheetProps {
   onCopyLink?: () => void;
   onShareProfile?: () => void;
   onAddReferral?: () => void;
-  onEditInfo?: () => void;
-  onResumes?: () => void;
+  /** Upload resume – shown when user has no resume */
+  onUploadResume?: () => void;
+  /** Resume – view/resume, shown when user has resume */
+  onResume?: () => void;
+  /** Update resume – shown when user has resume */
+  onUpdateResume?: () => void;
+  /** Whether user has uploaded a resume */
+  hasResume?: boolean;
 }
 
 export default function ProfileActionSheet({
@@ -17,8 +23,10 @@ export default function ProfileActionSheet({
   onCopyLink,
   onShareProfile,
   onAddReferral,
-  onEditInfo,
-  onResumes,
+  onUploadResume,
+  onResume,
+  onUpdateResume,
+  hasResume = false,
 }: ProfileActionSheetProps) {
   const handleAction = (action?: () => void) => {
     if (action) {
@@ -56,18 +64,29 @@ export default function ProfileActionSheet({
             >
               <Text style={styles.optionText}>Add referral</Text>
             </Pressable>
-            <Pressable
-              style={styles.option}
-              onPress={() => handleAction(onEditInfo)}
-            >
-              <Text style={styles.optionText}>Edit info</Text>
-            </Pressable>
-            <Pressable
-              style={styles.option}
-              onPress={() => handleAction(onResumes)}
-            >
-              <Text style={styles.optionText}>Resumes</Text>
-            </Pressable>
+            {hasResume ? (
+              <>
+                <Pressable
+                  style={styles.option}
+                  onPress={() => handleAction(onResume)}
+                >
+                  <Text style={styles.optionText}>Resume</Text>
+                </Pressable>
+                <Pressable
+                  style={styles.option}
+                  onPress={() => handleAction(onUpdateResume)}
+                >
+                  <Text style={styles.optionText}>Update resume</Text>
+                </Pressable>
+              </>
+            ) : (
+              <Pressable
+                style={styles.option}
+                onPress={() => handleAction(onUploadResume)}
+              >
+                <Text style={styles.optionText}>Upload resume</Text>
+              </Pressable>
+            )}
             <Pressable style={styles.cancelOption} onPress={onClose}>
               <Text style={styles.cancelText}>Cancel</Text>
             </Pressable>

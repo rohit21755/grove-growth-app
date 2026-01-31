@@ -48,7 +48,7 @@ export default function HomeScreen() {
         points={user?.xp}
         rank={user?.rank as number | undefined}
         level={user?.level}
-        profilePicture={user?.profilePicture as string | undefined}
+        profilePicture={user?.avatar_url as string | undefined}
       />
       <TaskSections />
     </View>

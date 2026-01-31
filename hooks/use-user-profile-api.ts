@@ -1,6 +1,8 @@
 import { useApi } from "@/contexts/api-context";
 import { useCallback } from "react";
 
+import type { FeedItem } from "@/types/feed";
+
 /** GET /user/{id} response (UserProfile from api.yml) */
 export type UserProfile = {
   user?: {
@@ -14,9 +16,10 @@ export type UserProfile = {
     avatar_url?: string;
     [key: string]: unknown;
   };
-  completed_tasks?: unknown[];
+  completed_tasks?: FeedItem[];
   following_count?: number;
   followers_count?: number;
+  is_following?: boolean;
   state_name?: string;
   college_name?: string;
   [key: string]: unknown;
